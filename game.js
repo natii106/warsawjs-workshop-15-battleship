@@ -30,12 +30,73 @@ class CellComponent extends Component {
   }
 }
 
+//setting state on proper cell
+class BoardComponent extends Component {
+  constructor({ handleCellClick, size = 8 }) {
+    super();
+    // Create _element, create child cells, append to our element
+    this._element = document.createElement('table');
+    this._cells = {};
+    for (let rowNumber = 0; rowNumber < size; rowNumber++) {
+      const rowElement = document.createElement('tr');
+      for (let colNumber = 0; colNumber < size; colNumber++) {
+        const cell = new CellComponent({
+          handleCellClick,
+          location : { row: rowNumber, column: colNumber}
+        });
+        rowElement.appendChild(cell.getElement());
+        this._cells[`${rowNumber}x${colNumber}`] = cell;
+      }
+      this._element.appendChild(rowElement);
+    }
+  }
+
+  setCellState(location, state) {
+    //Find the appropriate cell, call its setState()
+    const key = `${location.row}x${location.column}`;
+    console.log(this._cells);
+    this._cells[key].setState(state);
+  }
+}
 class GameController {
-  constructor(cells) {
-    this._cells = cells;
+  constructor(model) {
+    this._model = model;
   }
   handleCellClick({ location }) {
-    this._cells[location].setState('miss');
+    console.log();
+    this._model.fireAt(location);
+  }
+}
+
+//Models
+class CellModel {
+  constructor(hasShip) {
+    this._hasShip = hasShip;
+    this._firedAt = false;
+  }
+  //fire at one cell, return : has ship
+  fire() {
+    if (this._firedAt) {
+      return undefined;
+    }
+    this._firedAt = true;
+    console.log('fired');
+    return this._hasShip ? 'hit' : 'miss';
+  }
+}
+class BoardModel {
+  constructor({ size = 8} = {}) {
+    this._cells = {};
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        this._cells[`${i}x${j}`] = new CellModel({ hasShip: false });
+      }
+    }
+    console.log(this);
+  }
+  fireAt(location) {
+    const target = this._cells[`${location.row}x${location.column}`];
+    const trigeredResult = target.fire();
   }
 }
 
@@ -47,12 +108,9 @@ function handleCellClick(...args) {
 }
 
 const myCell = new CellComponent({ handleCellClick, location: 0 });
-const cells = [
-  new CellComponent({ handleCellClick, location: 0 }),
-  new CellComponent({ handleCellClick, location: 1 })
-];
-myController = new GameController(cells);
+const boardView = new BoardComponent({ handleCellClick });
+const boardModel = new BoardModel();
+myController = new GameController(boardModel);
 
-const cellContainer = document.getElementById('cellContainer');
-cellContainer.appendChild(cells[0].getElement());
-cellContainer.appendChild(cells[1].getElement());
+
+document.getElementById('boardContainer').appendChild(boardView.getElement());
