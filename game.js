@@ -6,15 +6,15 @@ class Component {
 }
 
 class CellComponent extends Component {
-
-  constructor(handleCellClick) {
+  //location - musimy wiedziec gdzie jestesmy aby zmieniac stan konkretnej komórki
+  //dectructuring assingment
+  //jesli nie mam location: location, to domyslnie value jest takie samo jak key
+  constructor({ location, handleCellClick }) {
     super();
-    //this dopiero po super
-    //podkreslnik to konwencja na zmienne prywatne
     this._state = 'unknown';
     this._element = document.createElement('td');
     this._element.addEventListener('click', function() {
-      handleCellClick();
+      handleCellClick({ location });
     });
     this._refresh();
   }
@@ -30,24 +30,29 @@ class CellComponent extends Component {
   }
 }
 
-//in this commit, refactor to MVC
 class GameController {
-  constructor(cell) {
-    this._cell = cell;
+  constructor(cells) {
+    this._cells = cells;
   }
-  handleCellClick() {
-    this._cell.setState('miss');
+  handleCellClick({ location }) {
+    this._cells[location].setState('miss');
   }
 }
 
 let myController;
-function handleCellClick() {
-  myController.handleCellClick();
+function handleCellClick(...args) {
+  //args w argumentach metody jest arrayem
+  //myController jako this
+  myController.handleCellClick.apply(myController, args);
 }
 
-const myCell = new CellComponent(handleCellClick);
-myController = new GameController(myCell);
+const myCell = new CellComponent({ handleCellClick, location: 0 });
+const cells = [
+  new CellComponent({ handleCellClick, location: 0 }),
+  new CellComponent({ handleCellClick, location: 1 })
+];
+myController = new GameController(cells);
 
-document
-  .getElementById('cellContainer')
-  .appendChild(myCell.getElement());
+const cellContainer = document.getElementById('cellContainer');
+cellContainer.appendChild(cells[0].getElement());
+cellContainer.appendChild(cells[1].getElement());
