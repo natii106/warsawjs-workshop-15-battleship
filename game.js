@@ -85,18 +85,44 @@ class CellModel {
   }
 }
 class BoardModel {
+
   constructor({ size = 8} = {}) {
     this._cells = {};
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
-        this._cells[`${i}x${j}`] = new CellModel({ hasShip: false });
+        let hasShip;
+        if(Math.random() < 0.2) {
+          hasShip = true;
+        } else {
+          hasShip = false;
+        }
+        this._cells[`${i}x${j}`] = new CellModel(hasShip); //w taki sposob przekaze boolean, jesli ({hasShip}) to jest to obiekt i w klasie CellModel
+        //muszę zmienic wydobywanie tej wlasciwosci przez przekazanie w{hasShip} i w konstruktorze wywolanie wlasciwosci z tego obiektu?
       }
     }
+    this._observers = {};
     console.log(this);
   }
   fireAt(location) {
     const target = this._cells[`${location.row}x${location.column}`];
-    const trigeredResult = target.fire();
+    const firedResult = target.fire();
+    if (firedResult != undefined) {
+      this._notifyObservers('firedAt', { location, firedResult })
+    }
+  }
+
+  _notifyObservers(type, data){
+    //Run all saved observers for given type
+     (this._observers[type] || []).forEach(function(observer) {
+       observer(data);
+     });
+  }
+
+  addObserver(type, observerFunction) {
+    if (!this._observers[type]) {
+      this._observers[type] = [];
+    }
+    this._observers[type].push(observerFunction);
   }
 }
 
@@ -111,6 +137,10 @@ const myCell = new CellComponent({ handleCellClick, location: 0 });
 const boardView = new BoardComponent({ handleCellClick });
 const boardModel = new BoardModel();
 myController = new GameController(boardModel);
+boardModel.addObserver('firedAt', function ({ location, firedResult}) {
+  console.log(firedResult);
+  boardView.setCellState(location, firedResult);
+})
 
 
 document.getElementById('boardContainer').appendChild(boardView.getElement());
